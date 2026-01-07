@@ -74,8 +74,9 @@ def create_vectorstore(
 def create_rag_chain(retriever: VectorStoreRetriever):
     """Create a Retrieval-Augmented Generation (RAG) chain using the provided retriever."""
 
+    prompts_dir = Path(__file__).resolve().parent / "prompts"
     PROMPT = PromptTemplate.from_template(
-        read_markdown_file("../prompts/retriever_prompt.md")
+        read_markdown_file(str(prompts_dir / "retriever_prompt.md"))
     )
 
     llm = ChatOpenAI(model="gpt-4o", temperature=0)
@@ -106,7 +107,7 @@ def add_file_to_existing_vectorstore(
     return vectorstore.as_retriever(search_kwargs={"k": TOP_K})
 
 
-def upload_file_and_create_rag_chain(
+def initialize_vectorstore_with_rag_chain(
     FILE_PATH: str,
     TOP_K: int = 3,
     *,
@@ -125,4 +126,9 @@ def upload_file_and_create_rag_chain(
         collection_name=collection_name,
         drop_old=drop_old,
     )
+    return create_rag_chain(retriever)
+
+
+def upload_file_with_rag_chain(FILE_PATH: str, vectorstore: Milvus, TOP_K: int = 3):
+    retriever = add_file_to_existing_vectorstore(FILE_PATH, vectorstore, TOP_K)
     return create_rag_chain(retriever)

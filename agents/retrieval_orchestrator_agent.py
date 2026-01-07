@@ -1,12 +1,16 @@
 from typing_extensions import TypedDict
 from typing import List, Any, Annotated
+from dataclasses import dataclass
 
 from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
-from langchain.tools import tool
+from langchain.tools import tool, ToolRuntime
 from deepagents.middleware.subagents import SubAgentMiddleware
 from langchain.agents.middleware import TodoListMiddleware
 
+@dataclass
+class Context:
+    rag_chain: Annotated[Any, "The RAG chain to use for retrieval"]
 
 class AggregatedContext(TypedDict):
     sub_query: Annotated[str, "The sub-query string"]
@@ -36,11 +40,13 @@ def read_markdown_file(filepath):
 @tool
 def retrieve_from_vectorstore(
     queries: Annotated[list[str], "The list of queries to retrieve answers for"],
-    rag_chain: Annotated[Any, "The RAG chain to use for retrieval"],
+    runtime: ToolRuntime[Context]
 ) -> dict:
     """Retrieve and generate answers from the vectorstore for a list of queries.
     This function invokes the RAG chain for each query and returns aggregated results.
     """
+    
+    rag_chain = runtime.context.rag_chain
 
     resp_dict = {}
     for query in queries:
@@ -99,5 +105,6 @@ def create_retrieval_orchestrator_agent():
             ),
         ],
         response_format=AggregatedContextList,
+        context_schema=Context
     )
     return agent
