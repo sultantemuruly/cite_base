@@ -1,5 +1,6 @@
 import os
 from typing import Optional, Literal, Annotated
+from typing_extensions import TypedDict
 
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
@@ -8,25 +9,8 @@ from langchain.agents.middleware import HumanInTheLoopMiddleware
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_tavily import TavilySearch
 
-user_question = "What is the self attention mechanism and how does it work in transformer models, also how anthropic explains it?"
-context = [
-    {
-        "sub_query": "self attention mechanism definition and purpose",
-        "retrieved_context": "Self-attention, sometimes called intra-attention is an attention mechanism relating different positions of a single sequence in order to compute a representation of the sequence (Vaswani et al., 2017, Section 2). The Transformer uses self-attention in encoder and decoder layers to allow each position to attend to all positions in the previous layer, enabling modeling of dependencies without recurrence (Vaswani et al., 2017, Section 3.2.3). Self-attention connects all positions with a constant number of sequential operations, improving parallelization and shortening path lengths for long-range dependencies compared to recurrent layers (Vaswani et al., 2017, Section 4).",
-        "citations": [
-            "Vaswani et al., 2017 - Attention Is All You Need; Section 2, 3.2.3, 4; https://proceedings.neurips.cc/paper_files/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf"
-        ],
-        "synthesized_answer": "Self-attention (intra-attention) relates positions within a single sequence to compute contextualized representations, enabling the model to represent each token with information from all other tokens in the sequence [Vaswani et al., 2017, Section 2].",
-    },
-    {
-        "sub_query": "self attention operation within transformer architecture",
-        "retrieved_context": "In a self-attention layer all keys, values and queries come from the same source (the previous layer) and each position can attend to all positions in that layer; in the decoder self-attention is masked to prevent leftward (future) information flow and the model also uses encoder-decoder attention where decoder queries attend encoder keys/values (Vaswani et al., 2017, Section 3.2.3). The Transformer implements multi-head attention and scaled dot-product attention to compute weights and aggregate values, enabling parallel computation and flexible representation learning (Vaswani et al., 2017, Sections 3.2.3 and 4).",
-        "citations": [
-            "Vaswani et al., 2017 - Attention Is All You Need; Section 3.2.3, 4; https://proceedings.neurips.cc/paper_files/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf"
-        ],
-        "synthesized_answer": "Transformer self-attention forms queries, keys, and values from the same input, computes attention weights (e.g., scaled dot-product, often via multiple heads), applies those weights to values to produce context-aware outputs, uses masking in decoder self-attention to preserve autoregression, and includes encoder–decoder attention to let the decoder attend to encoder outputs [Vaswani et al., 2017, Sections 3.2.3 and 4].",
-    },
-]
+class FinalAnswer(TypedDict):
+    final_answer: Annotated[str, "The final answer to the user's question"]
 
 
 def read_markdown_file(filepath):
@@ -72,9 +56,9 @@ def web_search(
 
 
 def create_reasoning_agent():
-    model = init_chat_model(model="gpt-5-mini")
+    """Create reasoning agent without static system prompt (will be set dynamically)."""
+    model = init_chat_model(model="gpt-4o-mini")
     tools = [web_search, can_perform_web_search]
-    reasoning_prompt = read_markdown_file("../prompts/reasoning_prompt.md")
 
     agent = create_agent(
         model=model,
@@ -88,7 +72,8 @@ def create_reasoning_agent():
                 description_prefix="Tool execution pending approval",
             )
         ],
+        response_format=FinalAnswer,
         checkpointer=InMemorySaver(),
     )
 
-    return agent, reasoning_prompt
+    return agent

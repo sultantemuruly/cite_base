@@ -12,3 +12,7 @@ wheels/
 # Environment variables
 .env
 .env.*
+
+# db
+notebooks/*.db.lock
+notebooks/*.db
