@@ -6,11 +6,14 @@ from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
 from langchain.tools import tool, ToolRuntime
 from deepagents.middleware.subagents import SubAgentMiddleware
-from langchain.agents.middleware import TodoListMiddleware
+
+## Removed TodoListMiddleware to avoid iterative planning loops
+
 
 @dataclass
 class Context:
     rag_chain: Annotated[Any, "The RAG chain to use for retrieval"]
+
 
 class AggregatedContext(TypedDict):
     sub_query: Annotated[str, "The sub-query string"]
@@ -40,12 +43,12 @@ def read_markdown_file(filepath):
 @tool
 def retrieve_from_vectorstore(
     queries: Annotated[list[str], "The list of queries to retrieve answers for"],
-    runtime: ToolRuntime[Context]
+    runtime: ToolRuntime[Context],
 ) -> dict:
     """Retrieve and generate answers from the vectorstore for a list of queries.
     This function invokes the RAG chain for each query and returns aggregated results.
     """
-    
+
     rag_chain = runtime.context.rag_chain
 
     resp_dict = {}
@@ -61,29 +64,26 @@ def create_retrieval_orchestrator_agent():
         "../prompts/query_decomposition_prompt.md"
     )
     query_decomposition_prompt = query_decomposition_prompt.format(examples=examples)
-    query_decomposition_model = "gpt-5-mini"
+    query_decomposition_model = "gpt-4o-mini"
     query_decomposition_description = "Analyzes research queries and generates optimized, non-overlapping sub-queries for vector database retrieval."
 
     vectorstore_retrieval_prompt = read_markdown_file(
         "../prompts/vectorstore_retrieval_prompt.md"
     )
-    vectorstore_retrieval_model = "gpt-5-nano"
+    vectorstore_retrieval_model = "gpt-4o-mini"
     vectorstore_retrieval_description = "Executes batch retrieval of academic context from vector database and preserves citations and metadata for structured result aggregation."
 
     retrieval_orchestrator_prompt = read_markdown_file(
         "../prompts/retrieval_orchestrator_prompt.md"
     )
-    todo_list_prompt = read_markdown_file("../prompts/todo_list_prompt.md")
+    # Removed todo list prompt; no iterative task planning
 
-    model = init_chat_model(model="gpt-5-mini")
+    model = init_chat_model(model="gpt-4o-mini")
 
     agent = create_agent(
         model=model,
         system_prompt=retrieval_orchestrator_prompt,
         middleware=[
-            TodoListMiddleware(
-                system_prompt=todo_list_prompt,
-            ),
             SubAgentMiddleware(
                 default_model="gpt-4o",
                 default_tools=[],
@@ -105,6 +105,6 @@ def create_retrieval_orchestrator_agent():
             ),
         ],
         response_format=AggregatedContextList,
-        context_schema=Context
+        context_schema=Context,
     )
     return agent

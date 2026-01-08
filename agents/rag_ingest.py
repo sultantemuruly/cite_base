@@ -45,7 +45,7 @@ def create_vectorstore(
     - Set `drop_old=True` only when you intend to recreate the collection.
     """
 
-    embedding = OpenAIEmbeddings(model="text-embedding-3-large")
+    embedding = OpenAIEmbeddings(model="text-embedding-3-small")
 
     enc = tiktoken.get_encoding("cl100k_base")
     tokenizer = OpenAITokenizer(tokenizer=enc, max_tokens=128 * 1024)
@@ -79,7 +79,7 @@ def create_rag_chain(retriever: VectorStoreRetriever):
         read_markdown_file(str(prompts_dir / "retriever_prompt.md"))
     )
 
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
     question_answer_chain = create_stuff_documents_chain(llm, PROMPT)
     rag_chain = create_retrieval_chain(retriever, question_answer_chain)
