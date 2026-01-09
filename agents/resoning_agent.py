@@ -9,20 +9,11 @@ from langchain.agents.middleware import HumanInTheLoopMiddleware
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_tavily import TavilySearch
 
+from utils.file_io import read_markdown_file
+
+
 class FinalAnswer(TypedDict):
     final_answer: Annotated[str, "The final answer to the user's question"]
-
-
-def read_markdown_file(filepath):
-    """Reads the content of a Markdown file as a string."""
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            text = f.read()
-        return text
-    except FileNotFoundError:
-        return f"Error: The file at {filepath} was not found."
-    except Exception as e:
-        return f"An error occurred: {e}"
 
 
 @tool

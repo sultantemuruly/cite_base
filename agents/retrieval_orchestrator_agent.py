@@ -7,7 +7,7 @@ from langchain.chat_models import init_chat_model
 from langchain.tools import tool, ToolRuntime
 from deepagents.middleware.subagents import SubAgentMiddleware
 
-## Removed TodoListMiddleware to avoid iterative planning loops
+from utils.file_io import read_markdown_file
 
 
 @dataclass
@@ -26,18 +26,6 @@ class AggregatedContextList(TypedDict):
     results: Annotated[
         List[AggregatedContext], "List of aggregated context for each sub-query"
     ]
-
-
-def read_markdown_file(filepath):
-    """Reads the content of a Markdown file as a string."""
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            text = f.read()
-        return text
-    except FileNotFoundError:
-        return f"Error: The file at {filepath} was not found."
-    except Exception as e:
-        return f"An error occurred: {e}"
 
 
 @tool
@@ -76,7 +64,6 @@ def create_retrieval_orchestrator_agent():
     retrieval_orchestrator_prompt = read_markdown_file(
         "../prompts/retrieval_orchestrator_prompt.md"
     )
-    # Removed todo list prompt; no iterative task planning
 
     model = init_chat_model(model="gpt-4o-mini")
 

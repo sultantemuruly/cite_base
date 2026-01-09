@@ -15,17 +15,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 
-
-def read_markdown_file(filepath):
-    """Reads the content of a Markdown file as a string."""
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            text = f.read()
-        return text
-    except FileNotFoundError:
-        return f"Error: The file at {filepath} was not found."
-    except Exception as e:
-        return f"An error occurred: {e}"
+from utils.file_io import read_markdown_file
 
 
 def create_vectorstore(
