@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -12,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router";
 
 const formSchema = z.object({
   email: z.string().email("Enter a valid email").max(100),
@@ -24,6 +26,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 function Signin() {
+  const [loading, setLoading] = useState(false);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -32,9 +36,36 @@ function Signin() {
     },
   });
 
-  const onSubmit = (values: FormValues) => {
-    // will change to actual signin logic later
-    console.log("submit", values);
+  const navigate = useNavigate();
+
+  const onSubmit = async (values: FormValues) => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:8000/auth/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
+      });
+
+      if (!response.ok) {
+        setLoading(false);
+        throw new Error("Failed to sign in");
+      }
+
+      const data = await response.json();
+      localStorage.setItem("token", data.access_token);
+      navigate("/dashboard");
+    } catch (error) {
+      setLoading(false);
+      console.error("Signin error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -73,8 +104,8 @@ function Signin() {
             )}
           />
 
-          <Button className="w-full" type="submit">
-            Sign in
+          <Button disabled={loading} className="w-full" type="submit">
+            {loading ? "Signing in..." : "Sign In"}
           </Button>
 
           <p className="text-center">

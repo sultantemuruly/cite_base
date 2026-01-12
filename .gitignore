@@ -1,1 +1,11 @@
 .vscode
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Docker
+*.db
+*.sqlite
+*.sqlite3

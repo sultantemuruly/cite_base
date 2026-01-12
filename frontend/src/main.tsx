@@ -6,6 +6,7 @@ import App from "./App.tsx";
 import AuthLayout from "./components/custom/auth/AuthLayout.tsx";
 import Signin from "./components/custom/auth/Signin.tsx";
 import Signup from "./components/custom/auth/Signup.tsx";
+import Dashboard from "./components/custom/dashboard/Dashboard.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -17,6 +18,8 @@ createRoot(document.getElementById("root")!).render(
           <Route path="signin" element={<Signin />} />
           <Route path="signup" element={<Signup />} />
         </Route>
+
+        <Route path="dashboard" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

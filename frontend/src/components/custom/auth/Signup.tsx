@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { useNavigate } from "react-router";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -19,11 +22,11 @@ const formSchema = z
     password: z
       .string()
       .min(6, "Password must be at least 6 characters.")
-      .max(100),
+      .max(72, "Password must be at most 72 characters."),
     confirmPassword: z
       .string()
       .min(6, "Password must be at least 6 characters.")
-      .max(100),
+      .max(72, "Password must be at most 72 characters."),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: "Passwords must match.",
@@ -33,6 +36,9 @@ const formSchema = z
 type FormValues = z.infer<typeof formSchema>;
 
 function Signup() {
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -42,9 +48,50 @@ function Signup() {
     },
   });
 
-  const onSubmit = (values: FormValues) => {
-    // TODO: replace with real sign-up call
-    console.log("submit", values);
+  const onSubmit = async (values: FormValues) => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:8000/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
+      });
+
+      if (!response.ok) {
+        setLoading(false);
+        throw new Error("Failed to sign up");
+      }
+
+      const token_response = await fetch("http://localhost:8000/auth/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
+      });
+
+      if (!token_response.ok) {
+        setLoading(false);
+        throw new Error("Failed to sign in");
+      }
+
+      const data = await token_response.json();
+      localStorage.setItem("token", data.access_token);
+      navigate("/dashboard");
+    } catch (error) {
+      setLoading(false);
+      console.error("Signin error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,8 +144,8 @@ function Signup() {
             )}
           />
 
-          <Button className="w-full" type="submit">
-            Create account
+          <Button disabled={loading} className="w-full" type="submit">
+            {loading ? "Signing up..." : "Create an account"}
           </Button>
 
           <p className="text-center">
