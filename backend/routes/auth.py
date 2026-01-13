@@ -57,6 +57,11 @@ def create_user(user: UserCreate, db_session: SessionDep):
     return db_user
 
 
+@router.get("/status")
+def get_auth_status():
+    return {"status": "Auth route is working"}
+
+
 @router.post("/register")
 def register(user: UserCreate, session: SessionDep):
     db_user = get_user_by_email(user.email, session)
@@ -88,9 +93,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 
 @router.post("/token")
-def login_for_access_token(
-    login_data: UserLogin, db_session: SessionDep
-):
+def login_for_access_token(login_data: UserLogin, db_session: SessionDep):
     user = authenticate_user(login_data.email, login_data.password, db_session)
     if not user:
         raise HTTPException(

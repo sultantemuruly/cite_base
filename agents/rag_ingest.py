@@ -8,8 +8,9 @@ from langchain_docling import DoclingLoader
 
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
-from langchain_milvus import Milvus
+from langchain_chroma import Chroma
 from langchain_core.vectorstores import VectorStoreRetriever
+from urllib.parse import urlparse
 
 from langchain_core.prompts import PromptTemplate
 from langchain_classic.chains import create_retrieval_chain
@@ -21,16 +22,16 @@ from utils.file_io import read_markdown_file
 def create_vectorstore(
     FILE_PATH: str,
     TOP_K: int = 3,
-    milvus_uri: str | None = None,
+    chroma_server_url: str | None = None,
     collection_name: str = "vectordb",
     drop_old: bool = False,
 ):
     """
-    Ingest a single file into a Milvus vector store and return a retriever.
+    Ingest a single file into a Chroma vector store and return a retriever.
 
     Notes:
-    - By default this uses a temporary local URI which will not preserve data.
-      Pass a persistent `milvus_uri` (e.g., a Milvus server URI) if you want
+    - By default this uses a temporary local path which will not preserve data.
+      Pass a persistent `chroma_server_url` (e.g., http://chroma:8000) if you want
       embeddings to be preserved across runs.
     - Set `drop_old=True` only when you intend to recreate the collection.
     """
@@ -45,17 +46,31 @@ def create_vectorstore(
     )
     docs = loader.load()
 
-    # Default to a temp path if no URI is provided (ephemeral storage)
-    effective_uri = milvus_uri or str(Path(mkdtemp()) / "vector.db")
-
-    vectorstore = Milvus.from_documents(
-        documents=docs,
-        embedding=embedding,
-        collection_name=collection_name,
-        connection_args={"uri": effective_uri},
-        index_params={"index_type": "FLAT"},
-        drop_old=drop_old,
-    )
+    # Use Chroma server if URL provided, otherwise use local persistent directory
+    if chroma_server_url:
+        # Parse the URL to extract host and port
+        parsed = urlparse(chroma_server_url)
+        host = parsed.hostname or "chroma"
+        port = parsed.port or 8000
+        
+        vectorstore = Chroma.from_documents(
+            documents=docs,
+            embedding=embedding,
+            collection_name=collection_name,
+            client_settings={
+                "chroma_server_host": host,
+                "chroma_server_http_port": port,
+            },
+        )
+    else:
+        # Local persistent storage
+        persist_directory = str(Path(mkdtemp()) / "chroma_db")
+        vectorstore = Chroma.from_documents(
+            documents=docs,
+            embedding=embedding,
+            collection_name=collection_name,
+            persist_directory=persist_directory,
+        )
 
     retriever = vectorstore.as_retriever(search_kwargs={"k": TOP_K})
     return retriever
@@ -77,10 +92,10 @@ def create_rag_chain(retriever: VectorStoreRetriever):
 
 
 def add_file_to_existing_vectorstore(
-    FILE_PATH: str, vectorstore: Milvus, TOP_K: int = 3
+    FILE_PATH: str, vectorstore: Chroma, TOP_K: int = 3
 ):
     """
-    Add a file's chunks into an existing Milvus vector store.
+    Add a file's chunks into an existing Chroma vector store.
 
     This preserves previously ingested embeddings by appending new documents.
     Returns a retriever for convenience.
@@ -101,24 +116,24 @@ def initialize_vectorstore_with_rag_chain(
     FILE_PATH: str,
     TOP_K: int = 3,
     *,
-    milvus_uri: str | None = None,
+    chroma_server_url: str | None = None,
     collection_name: str = "vectordb",
     drop_old: bool = False,
 ):
     """
     Convenience: ingest a file into the vector store and return a RAG chain.
-    Control persistence via `milvus_uri` and collection behavior via `drop_old`.
+    Control persistence via `chroma_server_url` and collection behavior via `drop_old`.
     """
     retriever = create_vectorstore(
         FILE_PATH,
         TOP_K,
-        milvus_uri=milvus_uri,
+        chroma_server_url=chroma_server_url,
         collection_name=collection_name,
         drop_old=drop_old,
     )
     return create_rag_chain(retriever)
 
 
-def upload_file_with_rag_chain(FILE_PATH: str, vectorstore: Milvus, TOP_K: int = 3):
+def upload_file_with_rag_chain(FILE_PATH: str, vectorstore: Chroma, TOP_K: int = 3):
     retriever = add_file_to_existing_vectorstore(FILE_PATH, vectorstore, TOP_K)
     return create_rag_chain(retriever)

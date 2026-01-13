@@ -15,12 +15,15 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM:-HS256}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - CHROMA_SERVER_URL=${CHROMA_SERVER_URL:-http://chroma:1234}
     volumes:
       - ./backend:/app
       - backend-db:/app/data
     networks:
       - citebase-network
     restart: unless-stopped
+    depends_on:
+      - chroma
 
   frontend:
     build:
@@ -40,8 +43,25 @@ services:
     depends_on:
       - backend
 
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: citebase-chroma
+    ports:
+      - "1234:1234"
+    volumes:
+      - chroma-data:/chroma/chroma
+    networks:
+      - citebase-network
+    restart: unless-stopped
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+      - CHROMA_SERVER_HTTP_PORT=1234
+    command: ["chroma", "run", "--host", "0.0.0.0", "--port", "1234"]
+
 volumes:
   backend-db:
+  chroma-data:
 
 networks:
   citebase-network:

@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db import create_db_and_tables
 from routes import auth
+from routes.documents import router as documents_router
 
 app = FastAPI()
 
@@ -27,6 +28,7 @@ app.add_middleware(
 
 # include routers
 app.include_router(auth.router)
+app.include_router(documents_router)
 
 
 @app.get("/")
