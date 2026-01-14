@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import OAuth2PasswordBearer
 
 from pydantic import BaseModel
 from datetime import datetime, timedelta
@@ -10,7 +9,7 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from pwdlib import PasswordHash
 
-from dependencies import SessionDep
+from dependencies import SessionDep, verify_token
 from models import User
 
 password_hash = PasswordHash.recommended()
@@ -29,8 +28,6 @@ if not algorithm:
 
 
 access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/token")
 
 
 class UserCreate(BaseModel):
@@ -108,22 +105,8 @@ def login_for_access_token(login_data: UserLogin, db_session: SessionDep):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-def verify_token(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, secret_key, algorithms=[algorithm])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(
-                status_code=401, detail="Could not validate credentials"
-            )
-        return email
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Token is invalid")
-
-
 @router.post("/verify_token")
-async def verify_user_token(token: str = Depends(oauth2_scheme)):
-    email = verify_token(token)
+async def verify_user_token(email: str = Depends(verify_token)):
     return {"email": email}
 
 
