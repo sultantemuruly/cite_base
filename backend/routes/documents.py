@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Form
 from langchain_core.documents import Document
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from docx import Document as DocxDocument
@@ -69,10 +69,10 @@ def get_documents(ids: list[str]):
 
 @router.post("/upload")
 async def upload_document(
-    title: str,
+    db_session: SessionDep,
+    current_user: CurrentUser,
+    title: str = Form(...),
     file: UploadFile = File(...),
-    db_session: SessionDep = None,
-    current_user: CurrentUser = None,
 ):
     try:
         documents = []
