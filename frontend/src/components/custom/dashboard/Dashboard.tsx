@@ -1,18 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { CiText } from "react-icons/ci";
 
 import { DocumentUpload } from "./DocumentUpload";
+import { Chat } from "./Chat";
 
 function Dashboard() {
   const navigate = useNavigate();
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     const verifyToken = async () => {
       const token = localStorage.getItem("token");
       try {
         const response = await fetch(
-          `http://localhost:8000/auth/verify_token/${token}`
+          `http://localhost:8000/auth/verify_token/${token}`,
         );
         if (!response.ok) {
           throw new Error("Token verification failed");
@@ -40,7 +42,11 @@ function Dashboard() {
 
       {/* Document Upload Section */}
       <div className="min-h-screen flex justify-center items-center">
-        <DocumentUpload />
+        {!showChat ? (
+          <DocumentUpload onUploadSuccess={() => setShowChat(true)} />
+        ) : (
+          <Chat />
+        )}
       </div>
     </div>
   );

@@ -23,6 +23,8 @@ def load_document_from_file(file_path: str, file_name: str) -> list[Document]:
     documents = []
 
     try:
+        if file_ext not in [".pdf", ".txt", ".docx", ".doc"]:
+            raise ValueError(f"Unsupported file type: {file_ext}")
         if file_ext == ".pdf":
             loader = PyPDFLoader(file_path)
             documents = loader.load()
@@ -66,50 +68,47 @@ def get_documents(ids: list[str]):
 
 
 @router.post("/upload")
-async def upload_documents(
-    files: list[UploadFile] = File(...),
+async def upload_document(
+    title: str,
+    file: UploadFile = File(...),
     db_session: SessionDep = None,
     current_user: CurrentUser = None,
 ):
     try:
-        all_documents = []
+        documents = []
 
-        # Process each uploaded file
-        for file in files:
-            # Create a temporary file
-            with tempfile.NamedTemporaryFile(
-                delete=False, suffix=os.path.splitext(file.filename)[1]
-            ) as tmp_file:
-                content = await file.read()
-                tmp_file.write(content)
-                tmp_file.flush()
-                tmp_path = tmp_file.name
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=os.path.splitext(file.filename)[1]
+        ) as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_file.flush()
+            tmp_path = tmp_file.name
 
-            try:
-                # Convert file to LangChain Documents
-                documents = load_document_from_file(tmp_path, file.filename)
-                all_documents.extend(documents)
-            finally:
-                # Clean up temporary file
-                os.unlink(tmp_path)
+        try:
+            # Convert file to LangChain Documents
+            documents = load_document_from_file(tmp_path, file.filename)
+        finally:
+            # Clean up temporary file
+            os.unlink(tmp_path)
 
-        if not all_documents:
+        if not documents:
             return {
                 "status": "error",
                 "message": "No documents could be extracted from the uploaded files",
             }
 
         # Upload documents to vector store
-        uuids = upload_to_vectorstore(all_documents)
-
-        # Save document UUIDs to database with user_id
-        db_docs = [
-            Docs(user_id=current_user.id, document_uuid=doc_uuid) for doc_uuid in uuids
-        ]
-        db_session.add_all(db_docs)
+        uuids = upload_to_vectorstore(documents)
+        
+        # Save document metadata to db
+        doc = Docs(title=title, user_id=current_user.id, document_uuids=uuids)
+        db_session.add(doc)
         db_session.commit()
+        db_session.refresh(doc)
 
-        return {"status": "success", "ids": uuids, "count": len(all_documents)}
+        return {"status": "success", "document_id": doc.id, "chunk_ids": uuids, "chunk_count": len(documents)}
     except Exception as e:
         db_session.rollback()
         return {"status": "error", "message": str(e)}
