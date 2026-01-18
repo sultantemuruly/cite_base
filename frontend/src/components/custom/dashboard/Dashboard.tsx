@@ -4,6 +4,7 @@ import { CiText } from "react-icons/ci";
 
 import { DocumentUpload } from "./DocumentUpload";
 import { Chat } from "./Chat";
+import { DisplayDocs } from "./DisplayDocs";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -41,13 +42,20 @@ function Dashboard() {
       </div>
 
       {/* Document Upload Section */}
-      <div className="min-h-screen flex justify-center items-center">
-        {!showChat ? (
-          <DocumentUpload onUploadSuccess={() => setShowChat(true)} />
-        ) : (
+      {!showChat ? (
+        <div className="min-h-screen flex flex-col gap-6 pt-8">
+          <div className="self-start pl-6">
+            <DisplayDocs />
+          </div>
+          <div className="flex justify-center items-center flex-1">
+            <DocumentUpload onUploadSuccess={() => setShowChat(true)} />
+          </div>
+        </div>
+      ) : (
+        <div className="min-h-screen flex justify-center items-center">
           <Chat />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -67,6 +67,15 @@ def get_documents(ids: list[str]):
         return {"status": "error", "message": str(e)}
 
 
+@router.get("/all")
+def get_docs_from_db(db_session: SessionDep, current_user: CurrentUser):
+    try:
+        documents = db_session.query(Docs).filter(Docs.user_id == current_user.id).all()
+        return {"documents": documents}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @router.post("/upload")
 async def upload_document(
     db_session: SessionDep,
