@@ -12,7 +12,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
+
+import { useDocs } from "@/hooks/useDocs";
 
 const documentSchema = z.object({
   title: z
@@ -46,6 +48,13 @@ interface DocumentUploadProps {
 
 const DocumentUpload = ({ onUploadSuccess }: DocumentUploadProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { setId, setTitle, setChunkIds, setChunkCount } = useDocs();
+  const [uploadData, setUploadData] = useState<{
+    id: number;
+    title: string;
+    chunk_ids: number[];
+    chunk_count: number;
+  } | null>(null);
 
   const form = useForm<DocumentFormValues>({
     resolver: zodResolver(documentSchema),
@@ -71,6 +80,7 @@ const DocumentUpload = ({ onUploadSuccess }: DocumentUploadProps) => {
         });
 
         const data = await response.json();
+        setUploadData(data);
 
         if (response.ok) {
           console.log("Document uploaded successfully:", data);
@@ -80,9 +90,6 @@ const DocumentUpload = ({ onUploadSuccess }: DocumentUploadProps) => {
           }
           // You can add a toast notification here for better UX
           alert(`Successfully uploaded ${data.chunk_count} document chunk(s)`);
-          if (onUploadSuccess) {
-            onUploadSuccess();
-          }
         } else {
           form.setError("document", {
             message: data.message || "Failed to upload document",
@@ -95,8 +102,27 @@ const DocumentUpload = ({ onUploadSuccess }: DocumentUploadProps) => {
         });
       }
     },
-    [form, fileInputRef, onUploadSuccess],
+    [form, fileInputRef],
   );
+
+  useEffect(() => {
+    if (uploadData) {
+      setId(uploadData.id);
+      setTitle(uploadData.title);
+      setChunkIds(uploadData.chunk_ids);
+      setChunkCount(uploadData.chunk_count);
+      if (onUploadSuccess) {
+        onUploadSuccess();
+      }
+    }
+  }, [
+    uploadData,
+    setId,
+    setTitle,
+    setChunkIds,
+    setChunkCount,
+    onUploadSuccess,
+  ]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {

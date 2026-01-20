@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from db import create_db_and_tables
 from routes.auth import router as auth_router
 from routes.documents import router as documents_router
+from routes.agent import router as agent_router
 
 
 @asynccontextmanager
@@ -35,6 +36,7 @@ app.add_middleware(
 # include routers
 app.include_router(auth_router)
 app.include_router(documents_router)
+app.include_router(agent_router)
 
 
 @app.get("/")

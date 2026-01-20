@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
+import { useDocs } from "@/hooks/useDocs";
+
 const formSchema = z.object({
   question: z.string().min(2).max(50),
 });
@@ -30,10 +32,23 @@ export const Chat = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
     try {
-      console.log(values);
+      const id = useDocs.getState().id;
+
+      const response = await fetch("http://localhost:8000/agent/execute", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_question: values.question,
+          doc_id: id,
+        }),
+      });
+      const data = await response.json();
+      console.log(data);
     } catch (error) {
       console.error(error);
     } finally {

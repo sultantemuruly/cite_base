@@ -110,14 +110,19 @@ async def upload_document(
 
         # Upload documents to vector store
         uuids = upload_to_vectorstore(documents)
-        
+
         # Save document metadata to db
         doc = Docs(title=title, user_id=current_user.id, document_uuids=uuids)
         db_session.add(doc)
         db_session.commit()
         db_session.refresh(doc)
 
-        return {"status": "success", "document_id": doc.id, "chunk_ids": uuids, "chunk_count": len(documents)}
+        return {
+            "document_id": doc.id,
+            "title": doc.title,
+            "chunk_ids": uuids,
+            "chunk_count": len(documents),
+        }
     except Exception as e:
         db_session.rollback()
         return {"status": "error", "message": str(e)}
