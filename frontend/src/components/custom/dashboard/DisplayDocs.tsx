@@ -44,12 +44,12 @@ export const DisplayDocs = () => {
 
   return (
     <div>
-      <h1>Your Documents</h1>
-      <div className="grid grid-cols-3 gap-4">
+      <h1 className="font-bold">Your Documents:</h1>
+      <div className="grid grid-cols-4 gap-4 pt-2">
         {docs && docs.length > 0 ? (
           docs.map((doc) => (
             <div key={doc.id} className="">
-              <Button>{doc.title}</Button>
+              <Button variant={"outline"}>{doc.title}</Button>
             </div>
           ))
         ) : (

@@ -24,4 +24,6 @@ dependencies = [
     "pypdf>=5.1.0",
     "alembic>=1.18.1",
     "markupsafe>=3.0.3",
+    "langgraph>=1.0.6",
+    "langchain-docling>=2.0.0",
 ]

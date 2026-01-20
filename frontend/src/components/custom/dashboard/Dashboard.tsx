@@ -43,13 +43,9 @@ function Dashboard() {
 
       {/* Document Upload Section */}
       {!showChat ? (
-        <div className="min-h-screen flex flex-col gap-6 pt-8">
-          <div className="self-start pl-6">
-            <DisplayDocs />
-          </div>
-          <div className="flex justify-center items-center flex-1">
-            <DocumentUpload onUploadSuccess={() => setShowChat(true)} />
-          </div>
+        <div className="min-h-screen flex flex-col items-center justify-center gap-6 pt-8">
+          <DocumentUpload onUploadSuccess={() => setShowChat(true)} />
+          <DisplayDocs />
         </div>
       ) : (
         <div className="min-h-screen flex justify-center items-center">
