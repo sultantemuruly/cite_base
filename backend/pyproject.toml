@@ -26,4 +26,6 @@ dependencies = [
     "markupsafe>=3.0.3",
     "langgraph>=1.0.6",
     "langchain-docling>=2.0.0",
+    "langchain>=1.2.6",
+    "deepagents>=0.3.6",
 ]

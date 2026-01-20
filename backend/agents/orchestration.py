@@ -7,7 +7,6 @@ from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.types import Command
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from rag_chain import rag_chain
 from agents.retrieval_orchestrator_agent import (
     create_retrieval_orchestrator_agent,
     Context,
